@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="pygame",
+    name="py-analog-game",
     version="0.1.1",
     author="MT-0624",
     author_email="5191032@st.hsc.ac.jp",
