@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyAnalogGame",
-    version="0.1.3",
+    version="0.1.4",
     author="MT-0624",
     author_email="5191032@st.hsc.ac.jp",
     description="board game library in use!!",
