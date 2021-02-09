@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pygame",
-    version="0.1.0",
+    version="0.1.1",
     author="MT-0624",
     author_email="5191032@st.hsc.ac.jp",
     description="board game library in use!!",
