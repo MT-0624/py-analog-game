@@ -177,6 +177,35 @@ class _Field(object):
         """
         self._array = np.zeros(dtype="int8", shape=(9, 9))
 
+        rows = sfen_head.split("/")
+        i, j = 0, 0
+
+        for i, row in enumerate(rows):
+            j = 0
+            promo = False
+            for char in row:
+                if char.isnumeric():
+                    j += int(char) - 1
+                elif char == "+":
+                    promo = True
+                    continue
+                else:
+                    p_num = en_to_num[char]
+                    if promo:
+                        if p_num > 0:
+                            p_num += 10
+                        else:
+                            p_num -= 10
+
+                    self._array[i][j] = p_num
+
+                    promo = False
+
+                j += 1
+                print(self._array)
+
+        print()
+
 
 class _PieceStand(object):
     def get_piece_count(self, piece_num):
