@@ -2,51 +2,7 @@
 
 import numpy as np
 from piece_dictionary import en_to_num, num_to_en
-
-
-class _PieceIndexError(Exception):
-    """
-    指定座標が範囲外であることを意味します
-    """
-    pass
-
-
-class _NoPieceError(Exception):
-    """
-    指定座標に駒が存在しないことを意味します
-    """
-    pass
-
-
-class _PieceExistsError(Exception):
-    """
-    指定座標に駒が存在することを意味します
-    """
-    pass
-
-
-class _PieceNotFoundError(Exception):
-    """
-    指定座標に駒が存在しないことを意味します
-    """
-    pass
-
-
-class _PromotedAlreadyError(Exception):
-    """
-    指定座標の駒がすでに成っていることを意味します
-    """
-    pass
-
-
-class _ilegalBoardError(Exception):
-    """
-    局面が以下のルールに則っていないことを意味します
-
-    二歩　同じ列に歩が2枚ある
-    自殺手・王手放置　相手の手番でありながら自玉に王手がかかっている
-    膠着　奥への桂馬不成などルール上身動きができない駒がある場合
-    """
+from Exceptions import *
 
 
 class _Field(object):
@@ -116,13 +72,13 @@ class _Field(object):
         piece_num = self._array[row][col]
 
         if row not in range(9) or col not in range(9):
-            raise _PieceIndexError("row:{} col:{}", format(row, col))
+            raise PieceIndexError("row:{} col:{}", format(row, col))
 
         if piece_num == 0:
-            raise _NoPieceError("row:{} col:{}", format(row, col))
+            raise NoPieceError("row:{} col:{}", format(row, col))
 
         if abs(piece_num) > 10:
-            raise _PromotedAlreadyError("row:{} col:{}".format(row, col))
+            raise PromotedAlreadyError("row:{} col:{}".format(row, col))
 
         # 成りの処理
         if piece_num > 0:
@@ -150,10 +106,10 @@ class _Field(object):
         piece_num = self._array[row][col]
 
         if row not in range(9) or col not in range(9):
-            raise _PieceIndexError("row:{} col:{}", format(row, col))
+            raise PieceIndexError("row:{} col:{}", format(row, col))
 
         if piece_num == 0:
-            raise _NoPieceError("row:{} col:{}", format(row, col))
+            raise NoPieceError("row:{} col:{}", format(row, col))
 
         self._array[row][col] = 0
 
@@ -178,10 +134,10 @@ class _Field(object):
         piece_num = self._array[row][col]
 
         if row not in range(9) or col not in range(9):
-            raise _PieceIndexError("row:{} col:{}", format(row, col))
+            raise PieceIndexError("row:{} col:{}", format(row, col))
 
         if piece_num != 0:
-            raise _PieceExistsError("row:{} col:{}", format(row, col))
+            raise PieceExistsError("row:{} col:{}", format(row, col))
 
         self._array[row][col] = drop_piece_num
 
@@ -199,15 +155,15 @@ class _Field(object):
 
         # 移動先に駒がないことの確認
         if r_src not in range(9) or c_src not in range(9):
-            raise _PieceIndexError("row:{} col:{}", format(r_src, c_src))
+            raise PieceIndexError("row:{} col:{}", format(r_src, c_src))
         if piece_num_src == 0:
-            raise _PieceNotFoundError("row:{} col:{}", format(r_src, c_src))
+            raise PieceNotFoundError("row:{} col:{}", format(r_src, c_src))
 
         # 移動先に駒がないことの確認
         if r_dst not in range(9) or c_dst not in range(9):
-            raise _PieceIndexError("row:{} col:{}", format(r_dst, c_dst))
+            raise PieceIndexError("row:{} col:{}", format(r_dst, c_dst))
         if piece_num_dst != 0:
-            raise _PieceExistsError("row:{} col:{}", format(r_dst, c_dst))
+            raise PieceExistsError("row:{} col:{}", format(r_dst, c_dst))
 
         # コマの移動処理
         self._array[r_dst][c_dst] = piece_num_src
@@ -228,7 +184,7 @@ class _PieceStand(object):
 
     def decrease(self, piece_num, amount=1):
         if self.array[piece_num - 1] < amount:
-            raise _NoPieceError("piece_num:{}".format(piece_num))
+            raise NoPieceError("piece_num:{}".format(piece_num))
 
         self.array[piece_num - 1] -= 1
 
@@ -245,7 +201,6 @@ class _PieceStand(object):
                 amount = 1
             else:
                 amount = int(char)
-
 
 
 class Board(object):
