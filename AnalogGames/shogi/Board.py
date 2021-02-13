@@ -55,6 +55,8 @@ class _Field(object):
 
 
     """
+    def show(self):
+        print(self._array)
 
     def promotion(self, row, col):
         """
@@ -202,12 +204,11 @@ class _Field(object):
                     promo = False
 
                 j += 1
-                print(self._array)
-
-        print()
 
 
 class _PieceStand(object):
+    def show(self):
+        print(self.array)
     def get_piece_count(self, piece_num):
         return self.array[piece_num - 1]
 
@@ -301,6 +302,11 @@ class Board(object):
         self.field = _Field(field)
         self.hand_w = _PieceStand(w)
         self.hand_b = _PieceStand(b)
+
+        self.field.show()
+        self.hand_w.show()
+        self.hand_b.show()
+        print()
 
     pass
 

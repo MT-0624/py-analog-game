@@ -21,5 +21,3 @@ en_to_num = {
 }
 
 num_to_en = dict([(v, k) for k, v in en_to_num.items()])
-
-print(num_to_en)
