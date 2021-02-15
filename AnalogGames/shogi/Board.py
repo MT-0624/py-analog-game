@@ -314,9 +314,9 @@ class Board(object):
         pass
 
     def show(self):
-        self.hand_b.show()
+        self.hand_black.show()
         self.field.show()
-        self.hand_w.show()
+        self.hand_white.show()
 
     def __init__(self, sfen, validation=True):
         """
@@ -340,8 +340,8 @@ class Board(object):
         self.validation = validation
 
         self.field = _Field(field)
-        self.hand_w = _PieceStand(w)
-        self.hand_b = _PieceStand(b)
+        self.hand_white = _PieceStand(w)
+        self.hand_black = _PieceStand(b)
 
         self.show()
         print()
