@@ -55,8 +55,28 @@ class _Field(object):
 
 
     """
+
     def show(self):
-        print(self._array)
+        # 盤面出力
+        grid = "".join(["+---" for i in range(9)]) + "+"
+
+        print(grid)
+        for row in range(9):
+            for col in range(9):
+                num = self._array[row][col]
+
+                if num == 0:
+                    txt = "  "
+                else:
+                    txt = num_to_en[num]
+
+                print("|{:^3s}".format(txt), end="")
+            else:
+                print("|")
+                print(grid)
+
+    def get_piece_num(self, row, col):
+        return self._array[row][col]
 
     def promotion(self, row, col):
         """
@@ -208,9 +228,26 @@ class _Field(object):
 
 class _PieceStand(object):
     def show(self):
-        print(self.array)
-    def get_piece_count(self, piece_num):
-        return self.array[piece_num - 1]
+        output = []
+        for i in range(1, 8):
+            amount = self.get_amount(i)
+            if amount == 0:
+                continue
+            output.append("{}x{}".format(num_to_en[i], amount))
+
+        if len(output) == 0:
+            print("無し")
+        else:
+            print(" ".join(output))
+
+    def get_amount(self, piece_name):
+        """
+        :param piece_name:駒番号　正負関係なく絶対値で検索するのでどちらでも可能
+        :return amount:駒の数量
+        """
+
+        amount = self.array[abs(piece_name) - 1]
+        return amount
 
     def decrease(self, piece_num, amount=1):
         if self.array[piece_num - 1] < amount:
@@ -227,7 +264,8 @@ class _PieceStand(object):
 
         for char in sfen_stand:
             if char.isalpha():
-                self.array[en_to_num[char] - 1] += amount
+                piece_index = abs(en_to_num[char]) - 1
+                self.array[piece_index] += amount
                 amount = 1
             else:
                 amount = int(char)
@@ -276,7 +314,9 @@ class Board(object):
         pass
 
     def show(self):
-        pass
+        self.hand_b.show()
+        self.field.show()
+        self.hand_w.show()
 
     def __init__(self, sfen, validation=True):
         """
@@ -303,12 +343,8 @@ class Board(object):
         self.hand_w = _PieceStand(w)
         self.hand_b = _PieceStand(b)
 
-        self.field.show()
-        self.hand_w.show()
-        self.hand_b.show()
+        self.show()
         print()
-
-    pass
 
 
 if __name__ == '__main__':
