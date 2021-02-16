@@ -1,6 +1,12 @@
 # coding:UTF-8
 
+import sys
+
+sys.path.append("../")
+
 import numpy as np
+
+from Board import Board
 from piece_dictionary import en_to_num, num_to_en
 from Exceptions import *
 
