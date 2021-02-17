@@ -11,7 +11,7 @@ from piece_dictionary import en_to_num, num_to_en
 from Exceptions import *
 
 
-class _Field(object):
+class _Field(Board):
     """
     81マスの盤面を表現したクラス
     :parameter self._array:list<list<int>>
@@ -69,7 +69,7 @@ class _Field(object):
         print(grid)
         for row in range(9):
             for col in range(9):
-                num = self._array[row][col]
+                num = self.array[row][col]
 
                 if num == 0:
                     txt = "  "
@@ -82,7 +82,7 @@ class _Field(object):
                 print(grid)
 
     def get_piece_num(self, row, col):
-        return self._array[row][col]
+        return self.array[row][col]
 
     def promotion(self, row, col):
         """
@@ -96,11 +96,9 @@ class _Field(object):
         :raise NoPieceError 指定座標に駒が存在しないことを意味します
         :raise PromotedAlreadyError 指定座標の駒がすでに成っていることを意味します
         """
+        self._range_check(row, col)
 
-        piece_num = self._array[row][col]
-
-        if row not in range(9) or col not in range(9):
-            raise PieceIndexError("row:{} col:{}", format(row, col))
+        piece_num = self.array[row][col]
 
         if piece_num == 0:
             raise NoPieceError("row:{} col:{}", format(row, col))
@@ -110,103 +108,17 @@ class _Field(object):
 
         # 成りの処理
         if piece_num > 0:
-            self._array[row][col] += 10
+            self.array[row][col] += 10
         else:
-            self._array[row][col] -= 10
-
-    def pop(self, row, col) -> int:
-        """
-        指定した地点の駒を成ります
-        厳密に言えば先手の駒なら駒番号を+10 後手の駒なら-10します
-
-        :param row: 盤面の最上段を0としたインデックス　言い換えればY軸
-        :param col: 盤面の最左列を0としたインデックス　言い換えればX軸
-
-        :raise PieceIndexError 指定座標が範囲外であることを意味します
-        :raise NoPieceError 指定座標に駒が存在しないことを意味します
-        :raise PromotedAlreadyError 指定座標の駒がすでに成っていることを意味します
-
-        :return piece_num:
-            取り出した駒番号　成り駒は絶対値が-10されます
-            後手の駒である場合、負の値であることに注意してください
-        """
-
-        piece_num = self._array[row][col]
-
-        if row not in range(9) or col not in range(9):
-            raise PieceIndexError("row:{} col:{}", format(row, col))
-
-        if piece_num == 0:
-            raise NoPieceError("row:{} col:{}", format(row, col))
-
-        self._array[row][col] = 0
-
-        # 成駒を不成の状態に戻す
-        if abs(piece_num) > 10:
-            if piece_num > 0:
-                piece_num -= 10
-            else:
-                piece_num += 10
-
-        return piece_num
-
-    def drop(self, row, col, drop_piece_num):
-        """駒を任意の場所に置きます
-
-        :param row:
-        :param col:
-        :param drop_piece_num:置く駒番号を指定します
-        :return:
-        """
-
-        piece_num = self._array[row][col]
-
-        if row not in range(9) or col not in range(9):
-            raise PieceIndexError("row:{} col:{}", format(row, col))
-
-        if piece_num != 0:
-            raise PieceExistsError("row:{} col:{}", format(row, col))
-
-        self._array[row][col] = drop_piece_num
-
-    def move(self, r_src, c_src, r_dst, c_dst):
-        """駒を任意の場所に移動させます
-
-        :param r_src:移動元のrow
-        :param c_src:移動元のcol
-        :param r_dst:移動先のrow
-        :param c_dst:移動先のcol
-
-        """
-        piece_num_src = self._array[r_src][c_src]
-        piece_num_dst = self._array[r_dst][c_dst]
-
-        # 移動先に駒がないことの確認
-        if r_src not in range(9) or c_src not in range(9):
-            raise PieceIndexError("row:{} col:{}", format(r_src, c_src))
-        if piece_num_src == 0:
-            raise PieceNotFoundError("row:{} col:{}", format(r_src, c_src))
-
-        # 移動先に駒がないことの確認
-        if r_dst not in range(9) or c_dst not in range(9):
-            raise PieceIndexError("row:{} col:{}", format(r_dst, c_dst))
-        if piece_num_dst != 0:
-            raise PieceExistsError("row:{} col:{}", format(r_dst, c_dst))
-
-        # コマの移動処理
-        self._array[r_dst][c_dst] = piece_num_src
-        self._array[r_src][c_src] = 0
-
-        return
+            self.array[row][col] -= 10
 
     def __init__(self, sfen_head: str = ""):
         """
         :param sfen_head: sfen形式の文字列の前半の盤面を意味する部分　分割処理は呼び出し元が担当する
         """
-        self._array = np.zeros(dtype="int8", shape=(9, 9))
+        super().__init__(size=9)
 
         rows = sfen_head.split("/")
-        i, j = 0, 0
 
         for i, row in enumerate(rows):
             j = 0
@@ -225,7 +137,7 @@ class _Field(object):
                         else:
                             p_num -= 10
 
-                    self._array[i][j] = p_num
+                    self.array[i][j] = p_num
 
                     promo = False
 
@@ -277,7 +189,7 @@ class _PieceStand(object):
                 amount = int(char)
 
 
-class Board(object):
+class ShogiBoard(object):
     def is_regal(self):
         pass
 
@@ -320,9 +232,20 @@ class Board(object):
         pass
 
     def show(self):
+        splitter = "-" * 40
+        print(splitter)
+
+        if self.turn == "w":
+            print("手番")
+
         self.hand_black.show()
         self.field.show()
         self.hand_white.show()
+
+        if self.turn == "b":
+            print("手番")
+
+        print(splitter)
 
     def __init__(self, sfen, validation=True):
         """
@@ -330,7 +253,12 @@ class Board(object):
         :param validation:Falseの場合、指し手や局面の合法チェックをしません、
         """
 
-        title, field, turn, hand, cnt = list(sfen.split(" "))
+        # sfen形式は先頭に”sfen”と書いてある場合とない場合がある
+        if sfen[:4] == "sfen":
+            sfen_title, sfen_field, sfen_turn, hand, cnt = list(sfen.split(" "))
+            del sfen_title
+        else:
+            sfen_field, sfen_turn, hand, cnt = list(sfen.split(" "))
 
         # 持ち駒要素を分割
         w = ""
@@ -341,22 +269,23 @@ class Board(object):
                 b = hand[i + 1:]
                 break
 
-        self.turn = turn
+        self.turn = sfen_turn
         self.move_count = int(cnt)
         self.validation = validation
 
-        self.field = _Field(field)
+        self.field = _Field(sfen_field)
+
         self.hand_white = _PieceStand(w)
         self.hand_black = _PieceStand(b)
 
-        self.show()
-        print()
-
 
 if __name__ == '__main__':
-    sfen = ["sfen l3k1g1+B/2g2g3/p2sb3p/2p1p1+S2/1r1S1p3/2P1P4/P2GnP2P/K2P+p4/LN5RL b SNL4Pn2p 102",
-            "sfen lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1",
-            "sfen lr2k1b1l/2sg2g2/p4snpp/2pNp2P1/3S1pS2/1PPGP4/P4P2P/2GB1+p3/LNK4RL w 4Pn 62"
-            ]
+    with open("./mate7.sfen", "r", encoding="UTF-8") as f:
+        lst = f.readlines()
 
-    b = Board(sfen=sfen[0])
+    sfen = [s.replace("\n", "") for s in lst]
+
+    from tqdm import tqdm
+
+    for s in tqdm(sfen):
+        ShogiBoard(s)
