@@ -5,6 +5,7 @@ import sys
 sys.path.append("../")
 
 import numpy as np
+import re
 
 from Board import Board
 from piece_dictionary import en_to_num, num_to_en
@@ -84,10 +85,10 @@ class _Field(Board):
     def get_piece_num(self, row, col):
         return self.array[row][col]
 
-    def promotion(self, row, col):
+    def flip(self, row, col):
         """
-        指定した地点の駒を成ります
-        厳密に言えば先手の駒なら駒番号を+10 後手の駒なら-10します
+        指定した地点の駒を裏表回転させます
+        成ったり成りを戻したりできます
 
         :param row: 盤面の最上段を0としたインデックス　言い換えればY軸
         :param col: 盤面の最左列を0としたインデックス　言い換えればX軸
@@ -102,15 +103,24 @@ class _Field(Board):
 
         if piece_num == 0:
             raise NoPieceError("row:{} col:{}", format(row, col))
+        if piece_num in (5, 8):
+            raise Exception("InflippablePiece row:{} col:{} piece_num:{}".format(row, col, piece_num))
 
         if abs(piece_num) > 10:
-            raise PromotedAlreadyError("row:{} col:{}".format(row, col))
+            # 戻しの処理
+            if piece_num > 0:
+                self.array[row][col] -= 10
+            else:
+                self.array[row][col] += 10
 
-        # 成りの処理
-        if piece_num > 0:
-            self.array[row][col] += 10
         else:
-            self.array[row][col] -= 10
+            # 成りの処理
+            if piece_num > 0:
+                self.array[row][col] += 10
+            else:
+                self.array[row][col] -= 10
+
+        return self.array[row][col]
 
     def __init__(self, sfen_head: str = ""):
         """
@@ -211,7 +221,29 @@ class ShogiBoard(object):
 
         :return:
         """
-        pass
+
+        if act_type == "move":
+            # 駒があれば取る処理
+            if abs(self.field.get_piece_num(dr, dc)) > 10:
+                self.field.flip(dr, dc)
+            take_piece = self.field.pop(dr, dc)
+
+            if take_piece != 0:
+                # 取る駒が敵のものであることをチェックしたい
+                if np.sign(take_piece) == self.turn:
+                    raise Exception
+
+                if self.turn == 1:
+                    self.hand_white.increase(self.field.pop(dr, dc))
+                if self.turn == -1:
+                    self.hand_black.increase(self.field.pop(dr, dc))
+
+            # 移動
+            self.field.move(sr, sc, dr, dc)
+
+            # 必要に応じて成る
+            if p_flag:
+                self.field.flip(dr, dc)
 
     def action_kif(self, action):
         """
@@ -235,17 +267,39 @@ class ShogiBoard(object):
         splitter = "-" * 40
         print(splitter)
 
-        if self.turn == "w":
+        if self.turn == -1:
             print("手番")
 
         self.hand_black.show()
         self.field.show()
         self.hand_white.show()
 
-        if self.turn == "b":
+        if self.turn == 1:
             print("手番")
 
         print(splitter)
+
+    def reformat_move(self, txt):
+        """
+        kif形式の入力から余分な文字列を削除する
+
+        :param txt:
+        :return:
+        """
+        move_only = re.compile("[０１２３４５６７８９][一二三四五六七八九][歩と香桂銀金飛角龍馬王玉][(][1-9][1-9][)]")
+        move_promoted = re.compile("[０１２３４５６７８９][一二三四五六七八九][成][香桂銀][(][1-9][1-9][)]")
+        move_promoting = re.compile("[０１２３４５６７８９][一二三四五六七八九][歩と香桂銀飛角][成][(][1-9][1-9][)]")
+        put = re.compile("[０１２３４５６７８９][一二三四五六七八九][歩と香桂銀金飛角][打]")
+        take_only = re.compile("[同][　][歩と香桂銀金飛角龍馬王玉][(][1-9][1-9][)]")
+
+        patten_list = [put, move_promoted, move_promoting, move_only, take_only]
+
+        for pat in patten_list:
+            sch = pat.search(txt)
+            if sch:
+                return sch.group()
+
+        raise SyntaxError(txt)
 
     def __init__(self, sfen, validation=True):
         """
@@ -269,9 +323,9 @@ class ShogiBoard(object):
                 b = hand[i + 1:]
                 break
 
-        self.turn = sfen_turn
+        self.turn = 1 if sfen_turn == "b" else -1
         self.move_count = int(cnt)
-        self.validation = validation
+        self.regal_check_flag = validation
 
         self.field = _Field(sfen_field)
 
@@ -280,12 +334,8 @@ class ShogiBoard(object):
 
 
 if __name__ == '__main__':
-    with open("./mate7.sfen", "r", encoding="UTF-8") as f:
-        lst = f.readlines()
+    b = ShogiBoard("sfen lnsgkg1nl/1r5s1/pppppp1pp/6p2/9/2P6/PP1PPPPPP/7R1/LNSGKGSNL b Bb 5")
 
-    sfen = [s.replace("\n", "") for s in lst]
-
-    from tqdm import tqdm
-
-    for s in tqdm(sfen):
-        ShogiBoard(s)
+    lst = [input() for i in range(100)]
+    for i in lst:
+        print(b.reformat_move(i))
