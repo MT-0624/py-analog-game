@@ -286,7 +286,6 @@ class ShogiBoard(object):
             src_text = fmt_source.search(txt).group()
             source = (int(src_text[2]) - 1, 9 - int(src_text[1]))
 
-        print()
 
     def show(self):
         splitter = "-" * 40
