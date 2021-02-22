@@ -273,9 +273,6 @@ class ShogiBoard(object):
         :return:
         """
 
-        import pdb
-        pdb.set_trace()
-
         if fmt_source.search(txt) is None:
             if "同" in txt:
                 destination = self._last_move
@@ -285,8 +282,6 @@ class ShogiBoard(object):
             dest_text = fmt_source.search(txt).group()
             destination = (str2int(dest_text[1]) - 1, 9 - str2int(dest_text[0]))
 
-            import pdb
-            pdb.set_trace()
         if fmt_piece.search(txt) and fmt_destination.search(txt):
             src_text = fmt_source.search(txt).group()
             source = (int(src_text[1]) - 1, 9 - int(src_text[2]))
