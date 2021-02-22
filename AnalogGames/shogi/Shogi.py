@@ -8,7 +8,8 @@ import numpy as np
 import re
 
 from Board import Board
-from piece_dictionary import en_to_num, num_to_en
+from piece_dictionary import \
+    en_to_num, num_to_en, fmt_source, fmt_destination, fmt_piece, str2int
 from Exceptions import *
 
 
@@ -203,51 +204,65 @@ class ShogiBoard(object):
     def is_regal(self):
         pass
 
-    def _action(self, act_type="", sr=-1, sc=-1, dr=-1, dc=-1, p_num=-1, p_flag=False):
+    def put(self, dr, dc, p_num):
+        if self.turn == 1:
+            self.field.drop(dr, dc, p_num)
+            self.hand_white.decrease(p_num)
+        else:
+            self.field.drop(dr, dc, p_num * -1)
+            self.hand_black.decrease(p_num)
+
+        self._last_move = (dr, dc)
+
+    def move(self, sr=-1, sc=-1, dr=-1, dc=-1, p_flag=False):
         """移動するための関数です　呼び出し時にはキーワード引数を使用してください
 
         短い変数の意味はFieldクラスのdocstringを参照してください
-
-        :param act_type:moveで移動を意味しています、dropで打ちを意味しています
-
         :param sr: src_rowの意
         :param sc:src_colの意
 
         :param dr:dst_rowの意
         :param dc:dst_colの意
 
-        :param p_num:piece_numの意
         :param p_flag:Trueにすると成ります　act_typeがmoveであるかの判定をしません
 
         :return:
         """
 
-        if act_type == "move":
-            # 駒があれば取る処理
-            if abs(self.field.get_piece_num(dr, dc)) > 10:
-                self.field.flip(dr, dc)
-            take_piece = self.field.pop(dr, dc)
+        # 駒があれば取る処理
+        if abs(self.field.get_piece_num(dr, dc)) > 10:
+            self.field.flip(dr, dc)
 
-            if take_piece != 0:
-                # 取る駒が敵のものであることをチェックしたい
-                if np.sign(take_piece) == self.turn:
-                    raise Exception
+        take_piece = self.field.get_piece_num(dr, dc)
 
-                if self.turn == 1:
-                    self.hand_white.increase(self.field.pop(dr, dc))
-                if self.turn == -1:
-                    self.hand_black.increase(self.field.pop(dr, dc))
+        if take_piece != 0:
+            # 取る駒が敵のものであることをチェック
+            if np.sign(take_piece) == self.turn:
+                raise Exception
 
-            # 移動
-            self.field.move(sr, sc, dr, dc)
+            if self.turn == 1:
+                self.hand_white.increase(self.field.pop(dr, dc))
+            if self.turn == -1:
+                self.hand_black.increase(self.field.pop(dr, dc))
 
-            # 必要に応じて成る
-            if p_flag:
-                self.field.flip(dr, dc)
+        moving_piece = self.field.get_piece_num(sr, sc)
 
-    def action_kif(self, action):
+        if moving_piece != 0:
+            # 取る駒が味方のものであることをチェック
+            if np.sign(moving_piece) == self.turn:
+                raise Exception
+
+        self.field.move(sr, sc, dr, dc)
+
+        # 必要に応じて成る
+        if p_flag:
+            self.field.flip(dr, dc)
+
+        self._last_move = (dr, dc)
+
+    def action_kif(self, txt):
         """
-        :param action:kif形式の動き部分をサポートします
+        :param txt:kif形式の動き部分をサポートします
         入力例１　移動先座標と移動元座標のみのデータ
         ７六歩(77)
 
@@ -255,13 +270,26 @@ class ShogiBoard(object):
         55 ２九飛(24)        ( 0:00/00:00:02)
 
         入力例
-
-
-
-
         :return:
         """
-        pass
+
+        import pdb
+        pdb.set_trace()
+
+        if fmt_source.search(txt) is None:
+            if "同" in txt:
+                destination = self._last_move
+            else:
+                raise ValueError(txt)
+        else:
+            dest_text = fmt_source.search(txt).group()
+            destination = (str2int(dest_text[1]) - 1, 9 - str2int(dest_text[0]))
+
+            import pdb
+            pdb.set_trace()
+        if fmt_piece.search(txt) and fmt_destination.search(txt):
+            src_text = fmt_source.search(txt).group()
+            source = (int(src_text[1]) - 1, 9 - int(src_text[2]))
 
     def show(self):
         splitter = "-" * 40
@@ -279,32 +307,10 @@ class ShogiBoard(object):
 
         print(splitter)
 
-    def reformat_move(self, txt):
-        """
-        kif形式の入力から余分な文字列を削除する
-
-        :param txt:
-        :return:
-        """
-        move_only = re.compile("[０１２３４５６７８９][一二三四五六七八九][歩と香桂銀金飛角龍馬王玉][(][1-9][1-9][)]")
-        move_promoted = re.compile("[０１２３４５６７８９][一二三四五六七八九][成][香桂銀][(][1-9][1-9][)]")
-        move_promoting = re.compile("[０１２３４５６７８９][一二三四五六七八九][歩と香桂銀飛角][成][(][1-9][1-9][)]")
-        put = re.compile("[０１２３４５６７８９][一二三四五六七八九][歩と香桂銀金飛角][打]")
-        take_only = re.compile("[同][　][歩と香桂銀金飛角龍馬王玉][(][1-9][1-9][)]")
-
-        patten_list = [put, move_promoted, move_promoting, move_only, take_only]
-
-        for pat in patten_list:
-            sch = pat.search(txt)
-            if sch:
-                return sch.group()
-
-        raise SyntaxError(txt)
-
     def __init__(self, sfen, validation=True):
         """
         :param sfen:
-        :param validation:Falseの場合、指し手や局面の合法チェックをしません、
+        :param validation:
         """
 
         # sfen形式は先頭に”sfen”と書いてある場合とない場合がある
@@ -328,6 +334,7 @@ class ShogiBoard(object):
         self.regal_check_flag = validation
 
         self.field = _Field(sfen_field)
+        self._last_move = (int(), int())  # 同　○　と表記されているときにこの変数を移動先にする
 
         self.hand_white = _PieceStand(w)
         self.hand_black = _PieceStand(b)
@@ -336,6 +343,6 @@ class ShogiBoard(object):
 if __name__ == '__main__':
     b = ShogiBoard("sfen lnsgkg1nl/1r5s1/pppppp1pp/6p2/9/2P6/PP1PPPPPP/7R1/LNSGKGSNL b Bb 5")
 
-    lst = [input() for i in range(100)]
-    for i in lst:
-        print(b.reformat_move(i))
+    test1 = r"19 ９六歩(97)        ( 0:00/00:00:00)"
+    b.action_kif(test1)
+    b.show()
