@@ -46,9 +46,9 @@ for num, eng in num_to_en.items():
         else:
             promo_dict[num - 10] = "+" + eng
 
-fmt_source = re.compile("[１２３４５６７８９][一二三四五六七八九]")
+fmt_destination = re.compile("[１２３４５６７８９][一二三四五六七八九]")
 fmt_piece = re.compile("[歩と桂香銀金角飛馬龍王玉]")
-fmt_destination = re.compile("[(][1-9][1-9][)]")
+fmt_source = re.compile("[(][1-9][1-9][)]")
 
 num_to_en.update(promo_dict)
 

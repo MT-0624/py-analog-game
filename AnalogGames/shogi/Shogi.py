@@ -9,7 +9,7 @@ import re
 
 from Board import Board
 from piece_dictionary import \
-    en_to_num, num_to_en, fmt_source, fmt_destination, fmt_piece, str2int
+    en_to_num, num_to_en, fmt_destination, fmt_source, fmt_piece, str2int
 from Exceptions import *
 
 
@@ -273,18 +273,20 @@ class ShogiBoard(object):
         :return:
         """
 
-        if fmt_source.search(txt) is None:
+        if fmt_destination.search(txt) is None:
             if "同" in txt:
                 destination = self._last_move
             else:
                 raise ValueError(txt)
         else:
-            dest_text = fmt_source.search(txt).group()
+            dest_text = fmt_destination.search(txt).group()
             destination = (str2int(dest_text[1]) - 1, 9 - str2int(dest_text[0]))
 
-        if fmt_piece.search(txt) and fmt_destination.search(txt):
+        if fmt_piece.search(txt) and fmt_source.search(txt):
             src_text = fmt_source.search(txt).group()
-            source = (int(src_text[1]) - 1, 9 - int(src_text[2]))
+            source = (int(src_text[2]) - 1, 9 - int(src_text[1]))
+
+        print()
 
     def show(self):
         splitter = "-" * 40
