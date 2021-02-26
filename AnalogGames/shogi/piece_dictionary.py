@@ -65,13 +65,22 @@ def piece_name_to_num(piece_txt: str) -> int:
 jp_num_kanji = dict((i + 1, s) for i, s in enumerate("一二三四五六七八九"))
 jp_num_kanji.update(dict((s, i + 1) for i, s in enumerate("一二三四五六七八九")))
 
-jp_num_full = dict((i + 1, s) for i, s in enumerate("１２３４５６７８９"))
-jp_num_full.update(dict((s, i + 1) for i, s in enumerate("１２３４５６７８９")))
-
+jp_num_fullcamel = dict((i + 1, s) for i, s in enumerate("１２３４５６７８９"))
+jp_num_fullcamel.update(dict((s, i + 1) for i, s in enumerate("１２３４５６７８９")))
 
 kanji_piece_to_num = {}
+
 for i, jp in zip([1, 10, 2, 3, 4, 5, 6, 7, 16, 17, 8, 8], "歩と桂香銀金角飛馬龍王玉"):
     kanji_piece_to_num[jp] = i
+
+
+def piece_kanji2num(value, sign: int, promoted=False):
+    p_num = kanji_piece_to_num[value]
+    p_num *= sign
+    if promoted:
+        p_num = 10 * sign
+
+    return p_num
 
 
 def str2int(value):
@@ -83,8 +92,8 @@ def str2int(value):
     """
 
     if type(value) == str:
-        if value in jp_num_full.keys():
-            return jp_num_full[value]
+        if value in jp_num_fullcamel.keys():
+            return jp_num_fullcamel[value]
 
         if value in jp_num_kanji.keys():
             return jp_num_kanji[value]

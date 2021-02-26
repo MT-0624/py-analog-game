@@ -9,7 +9,7 @@ import re
 
 from Board import Board
 from piece_dictionary import \
-    en_to_num, num_to_en, fmt_destination, fmt_source, fmt_piece, str2int
+    en_to_num, num_to_en, fmt_destination, fmt_source, fmt_piece, str2int, piece_kanji2num
 from Exceptions import *
 
 
@@ -83,10 +83,11 @@ class _Field(Board):
                 print("|")
                 print(grid)
 
-    def get_piece_num(self, row, col):
+    def get_piece_num(self, coordination):
+        row, col = coordination
         return self.array[row][col]
 
-    def flip(self, row, col):
+    def flip(self, source):
         """
         指定した地点の駒を裏表回転させます
         成ったり成りを戻したりできます
@@ -98,6 +99,9 @@ class _Field(Board):
         :raise NoPieceError 指定座標に駒が存在しないことを意味します
         :raise PromotedAlreadyError 指定座標の駒がすでに成っていることを意味します
         """
+
+        row, col = source
+
         self._range_check(row, col)
 
         piece_num = self.array[row][col]
@@ -204,7 +208,9 @@ class ShogiBoard(object):
     def is_regal(self):
         pass
 
-    def put(self, dr, dc, p_num):
+    def put(self, destination: tuple, p_num):
+
+        dr, dc = destination
         if self.turn == 1:
             self.field.drop(dr, dc, p_num)
             self.hand_white.decrease(p_num)
@@ -214,15 +220,10 @@ class ShogiBoard(object):
 
         self._last_move = (dr, dc)
 
-    def move(self, sr=-1, sc=-1, dr=-1, dc=-1, p_flag=False):
+    def move(self, source: tuple, destination: tuple, p_flag=False):
         """移動するための関数です　呼び出し時にはキーワード引数を使用してください
 
         短い変数の意味はFieldクラスのdocstringを参照してください
-        :param sr: src_rowの意
-        :param sc:src_colの意
-
-        :param dr:dst_rowの意
-        :param dc:dst_colの意
 
         :param p_flag:Trueにすると成ります　act_typeがmoveであるかの判定をしません
 
@@ -230,10 +231,10 @@ class ShogiBoard(object):
         """
 
         # 駒があれば取る処理
-        if abs(self.field.get_piece_num(dr, dc)) > 10:
-            self.field.flip(dr, dc)
+        if abs(self.field.get_piece_num(destination)) > 10:
+            self.field.flip(destination)
 
-        take_piece = self.field.get_piece_num(dr, dc)
+        take_piece = self.field.get_piece_num(destination)
 
         if take_piece != 0:
             # 取る駒が敵のものであることをチェック
@@ -241,24 +242,25 @@ class ShogiBoard(object):
                 raise Exception
 
             if self.turn == 1:
-                self.hand_white.increase(self.field.pop(dr, dc))
+                self.hand_white.increase(self.field.pop(destination))
             if self.turn == -1:
-                self.hand_black.increase(self.field.pop(dr, dc))
+                self.hand_black.increase(self.field.pop(destination))
 
-        moving_piece = self.field.get_piece_num(sr, sc)
+        moving_piece = self.field.get_piece_num(source)
 
-        if moving_piece != 0:
+        if take_piece != 0:
             # 取る駒が味方のものであることをチェック
             if np.sign(moving_piece) == self.turn:
-                raise Exception
+                raise PieceExistsError
 
-        self.field.move(sr, sc, dr, dc)
+        self.field.move(source=source, destination=destination)
 
         # 必要に応じて成る
         if p_flag:
-            self.field.flip(dr, dc)
+            self.field.flip(destination)
 
-        self._last_move = (dr, dc)
+        self._last_move = destination
+        self.turn *= -1
 
     def action_kif(self, txt):
         """
@@ -272,35 +274,61 @@ class ShogiBoard(object):
         入力例
         :return:
         """
-
-        if fmt_destination.search(txt) is None:
-            if "同" in txt:
-                destination = self._last_move
-            else:
-                raise ValueError(txt)
+        if "打" in txt:
+            pass
         else:
-            dest_text = fmt_destination.search(txt).group()
-            destination = (str2int(dest_text[1]) - 1, 9 - str2int(dest_text[0]))
+            if fmt_destination.search(txt) is None:
+                if "同" in txt:
+                    destination = self._last_move
+                else:
+                    raise ValueError(txt)
+            else:
+                dest_text = fmt_destination.search(txt).group()
+                destination = (str2int(dest_text[1]) - 1, 9 - str2int(dest_text[0]))
 
-        if fmt_piece.search(txt) and fmt_source.search(txt):
-            src_text = fmt_source.search(txt).group()
-            source = (int(src_text[2]) - 1, 9 - int(src_text[1]))
+            if fmt_source.search(txt):
+                src_text = fmt_source.search(txt).group()
+                source = (int(src_text[2]) - 1, 9 - int(src_text[1]))
+            else:
+                raise SyntaxError(txt)
 
+            piece_obj = fmt_piece.search(txt)
+            assert piece_obj is not None
+
+            piece_ind = piece_obj.start()
+
+            promote = False
+
+            if "成" in txt:
+                promote_ind = txt.index("成")
+
+                if piece_ind < promote_ind:
+                    promote = True
+
+            self.move(source=source, destination=destination, p_flag=promote)
+
+        print()
 
     def show(self):
+
+        turn_label = "【手番】"
         splitter = "-" * 40
         print(splitter)
-
+        print("後手", end="")
         if self.turn == -1:
-            print("手番")
+            print(turn_label)
+        else:
+            print()
 
         self.hand_black.show()
         self.field.show()
         self.hand_white.show()
 
+        print("先手", end="")
         if self.turn == 1:
-            print("手番")
-
+            print(turn_label)
+        else:
+            print()
         print(splitter)
 
     def __init__(self, sfen, validation=True):
@@ -319,11 +347,13 @@ class ShogiBoard(object):
         # 持ち駒要素を分割
         w = ""
         b = ""
-        for i in range(len(hand) - 1, 0, -1):
+        for i in range(len(hand) - 1, -1, -1):
             if hand[i].isupper():
                 w = hand[:i + 1]
                 b = hand[i + 1:]
                 break
+        else:
+            b = hand
 
         self.turn = 1 if sfen_turn == "b" else -1
         self.move_count = int(cnt)
@@ -337,8 +367,12 @@ class ShogiBoard(object):
 
 
 if __name__ == '__main__':
-    b = ShogiBoard("sfen lnsgkg1nl/1r5s1/pppppp1pp/6p2/9/2P6/PP1PPPPPP/7R1/LNSGKGSNL b Bb 5")
+    b = ShogiBoard("sfen lr2k3l/4g1g2/2nsb3p/2p1ppsR1/Pp1P1np2/p1P2S3/1PSG4P/2GB5/LNK4NL w 4P2p 64")
 
-    test1 = r"19 ９六歩(97)        ( 0:00/00:00:00)"
+    test1 = r"64 ３七桂成(45)       ( 0:00/00:00:02)"
+    test2 = r"65 ２一飛成(24)"
+    b.show()
     b.action_kif(test1)
+    b.show()
+    b.action_kif(test2)
     b.show()

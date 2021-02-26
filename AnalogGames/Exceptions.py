@@ -7,6 +7,13 @@ class PieceIndexError(Exception):
     pass
 
 
+class FriendlyFireError(Exception):
+    """
+    取ろうとした駒が味方のものであるときに挙げます
+    """
+    pass
+
+
 class NoPieceError(Exception):
     """
     指定座標に駒が存在しないことを意味します

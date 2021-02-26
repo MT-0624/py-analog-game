@@ -21,7 +21,7 @@ class Board(object):
         if row not in range(self.size) or col not in range(self.size):
             raise PieceIndexError("row:{} col:{}", format(row, col))
 
-    def pop(self, row, col):
+    def pop(self, destination):
         """
         指定した地点の駒を成ります
         厳密に言えば先手の駒なら駒番号を+10 後手の駒なら-10します
@@ -37,6 +37,8 @@ class Board(object):
             取り出した駒番号　成り駒は絶対値が-10されます
             後手の駒である場合、負の値であることに注意してください
         """
+        row, col = destination
+
         self._range_check(row, col)
 
         piece_num = self.array[row][col]
@@ -46,7 +48,7 @@ class Board(object):
 
         self.array[row][col] = 0
 
-    def drop(self, row, col, obj):
+    def drop(self, destination, obj):
         """駒や石などをを任意の場所に置きます
 
         :param row:
@@ -54,6 +56,7 @@ class Board(object):
         :param obj:
         :return:
         """
+        row, col = destination
 
         piece_num = self.array[row][col]
 
@@ -64,7 +67,7 @@ class Board(object):
 
         self.array[row][col] = obj
 
-    def move(self, r_src, c_src, r_dst, c_dst):
+    def move(self, source, destination):
         """駒を任意の場所に移動させます
 
         :param r_src:移動元のrow
@@ -73,6 +76,8 @@ class Board(object):
         :param c_dst:移動先のcol
 
         """
+        r_src, c_src = source
+        r_dst, c_dst = destination
         piece_num_src = self.array[r_src][c_src]
         piece_num_dst = self.array[r_dst][c_dst]
 
