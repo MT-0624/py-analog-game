@@ -209,7 +209,6 @@ class ShogiBoard(object):
         pass
 
     def put(self, destination: tuple, p_num):
-
         dr, dc = destination
         if self.turn == 1:
             self.field.drop(dr, dc, p_num)
@@ -306,8 +305,6 @@ class ShogiBoard(object):
                     promote = True
 
             self.move(source=source, destination=destination, p_flag=promote)
-
-        print()
 
     def show(self):
 
