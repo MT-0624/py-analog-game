@@ -314,7 +314,7 @@ class ShogiBoard(object):
     def show(self, turn_label="【手番】"):
         splitter = "-" * 40
         print(splitter)
-        print("後手", end="")
+        print("後手持駒", end="")
         if self.turn == -1:
             print(turn_label)
         else:
@@ -324,7 +324,7 @@ class ShogiBoard(object):
         self.field.show()
         self.hand_white.show()
 
-        print("先手", end="")
+        print("先手持駒", end="")
         if self.turn == 1:
             print(turn_label)
         else:
@@ -373,12 +373,18 @@ class ShogiBoard(object):
 
 
 if __name__ == '__main__':
-    b = ShogiBoard("sfen lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1")
+    # sfen形式を引数にShogiBoardオブジェクトを作成できます
+    sample_board = ShogiBoard("sfen lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1")
 
-    b.show(turn_label="●")
+    # 盤面の表示
+    sample_board.show()
+    sample_board.show(turn_label="●")  # 任意のマークで手番を示すオプションあり。デフォルトは"【手番】"
 
-    with open("test.kif", "r", encoding="UTF-8") as f:
-        for i in f.readlines():
-            print(i)
-            b.action_kif(i)
-            b.show()
+    move1 = "７六歩(77)"  # kif形式の動きをサポートしています。
+    sample_board.action_kif(move1)
+
+    # kif形式の中で必要な値のみ取得するのでその他記号は無視されます
+    move2 = "   2 ８四歩(83)        ( 0:00/00:00:00)"
+    sample_board.action_kif(move2)
+
+    sample_board.show()
