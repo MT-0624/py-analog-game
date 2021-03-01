@@ -26,9 +26,6 @@ class Board(object):
         指定した地点の駒を成ります
         厳密に言えば先手の駒なら駒番号を+10 後手の駒なら-10します
 
-        :param row: 盤面の最上段を0としたインデックス　言い換えればY軸
-        :param col: 盤面の最左列を0としたインデックス　言い換えればX軸
-
         :raise PieceIndexError 指定座標が範囲外であることを意味します
         :raise NoPieceError 指定座標に駒が存在しないことを意味します
         :raise PromotedAlreadyError 指定座標の駒がすでに成っていることを意味します
@@ -47,6 +44,8 @@ class Board(object):
             raise NoPieceError("row:{} col:{}", format(row, col))
 
         self.array[row][col] = 0
+
+        return piece_num
 
     def drop(self, destination, obj):
         """駒や石などをを任意の場所に置きます
